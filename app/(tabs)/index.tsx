@@ -10,6 +10,7 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native'
+import { Video, ResizeMode } from 'expo-av'
 import { useUser, useAuth } from '@clerk/clerk-expo'
 import { SignOutButton } from '@/components/SignOutButton'
 import API_URL from '@/constants/api'
@@ -113,27 +114,44 @@ export default function DiaryHomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >  
-      {entries.map((entry) => (
-        <View key={entry.id} style={{ marginBottom: 20 }}>
-          <Image source={{ uri: entry.media_url }} style={{ height: 200, borderRadius: 10 }} />
-          <Text
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              color: '#000',
-              paddingHorizontal: 10,
-              paddingVertical: 4,
-              borderRadius: 6,
-              marginVertical: 5,
-            }}
-          >
-            {entry.caption}
-          </Text>
-          <Text style={{ color: '#aaa', fontSize: 12, marginTop: 4 }}>
-            {new Date(entry.created_at).toLocaleString()}
-          </Text>
-          <Button title="Delete" onPress={() => confirmDelete(entry.id)} />
-        </View>
-      ))}
+{entries.map((entry) => {
+  const isVideo = entry.media_url.endsWith('.mp4') || entry.media_url.includes('.mp4')
+
+  return (
+    <View key={entry.id} style={{ marginBottom: 20 }}>
+      {isVideo ? (
+        <Video
+          source={{ uri: entry.media_url }}
+          style={{ height: 200, borderRadius: 10 }}
+          useNativeControls
+          resizeMode={ResizeMode.CONTAIN}
+          shouldPlay={false}
+        />
+      ) : (
+        <Image
+          source={{ uri: entry.media_url }}
+          style={{ height: 200, borderRadius: 10 }}
+        />
+      )}
+      <Text
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          color: '#000',
+          paddingHorizontal: 10,
+          paddingVertical: 4,
+          borderRadius: 6,
+          marginVertical: 5,
+        }}
+      >
+        {entry.caption}
+      </Text>
+      <Text style={{ color: '#aaa', fontSize: 12, marginTop: 4 }}>
+        {new Date(entry.created_at).toLocaleString()}
+      </Text>
+      <Button title="Delete" onPress={() => confirmDelete(entry.id)} />
+    </View>
+      )
+    })}
     </ScrollView>
   )
 }
