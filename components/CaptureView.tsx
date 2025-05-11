@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Image, Text, TextInput, Button, ActivityIndicator, StyleSheet } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
+import { FFmpegKit } from 'ffmpeg-kit-react-native';
+import formatDuration from '@/utils/formatDuration';
 import useAudioRecording from '@/hooks/useAudioRecording';
 
 interface CaptureViewProps {
@@ -11,6 +14,7 @@ interface CaptureViewProps {
   isUploading: boolean;
   uploadMedia: () => void;
   setMediaUri: (uri: string | null) => void;
+  setIsVideo: (val: boolean) => void; 
 }
 
 const CaptureView: React.FC<CaptureViewProps> = ({
@@ -21,16 +25,41 @@ const CaptureView: React.FC<CaptureViewProps> = ({
   isUploading,
   uploadMedia,
   setMediaUri,
+  setIsVideo,
 }) => {
-// Hooks
-const {
+  const {
     audioUri,
     audioRecording,
     setAudioUri,
     setAudioRecording,
     startAudioRecording,
     stopAudioRecording,
+    recordingDuration,
   } = useAudioRecording();
+
+  const [isStitching, setIsStitching] = useState(false);
+
+  const handleStopAudio = async () => {
+    await stopAudioRecording();
+    console.log("Before stitching - mediaUri:", mediaUri);
+    console.log("Before stitching - audioUri:", audioUri);
+    if (audioUri && mediaUri) {
+      setIsStitching(true);
+      try {
+        const outputPath = FileSystem.cacheDirectory + `stitched_${Date.now()}.mp4`;
+        const ffmpegCommand = `-loop 1 -i "${mediaUri}" -i "${audioUri}" -c:v libx264 -tune stillimage -c:a aac -b:a 192k -shortest -pix_fmt yuv420p "${outputPath}"`;
+        console.log("🎬 Running FFmpeg:", ffmpegCommand);
+        await FFmpegKit.execute(ffmpegCommand);
+        setMediaUri(outputPath);
+        console.log("Stitched output saved to:", outputPath);
+        setIsVideo(true);
+      } catch (e) {
+        console.error("❌ FFmpeg stitching failed:", e);
+      } finally {
+        setIsStitching(false);
+      }
+    }
+  };
 
   return (
     <>
@@ -55,24 +84,32 @@ const {
         value={caption}
         onChangeText={setCaption}
       />
-      
-      {!isVideo && (
+
+      {!isVideo && !isStitching && (
         <>
           {audioRecording ? (
-            <Button title="Stop Recording Audio" onPress={stopAudioRecording} />
+            <>
+              <Text style={{ color: 'white', marginBottom: 6 }}>{formatDuration(recordingDuration)}</Text>
+              <Button title="Stop Recording Audio" onPress={handleStopAudio} color="#ff4444" />
+            </>
           ) : (
-            <Button title="Record Audio" onPress={startAudioRecording} />
+            <Button title="Record Audio" onPress={() => {
+              startAudioRecording();
+            }} />
           )}
-          {audioUri && <Text style={{ color: 'white' }}>Audio recorded</Text>}
         </>
       )}
-      
+
+      {isStitching && (
+        <ActivityIndicator size="large" color="#fff" style={{ marginVertical: 20 }} />
+      )}
+
       {isUploading ? (
         <ActivityIndicator size="large" color="#fff" />
       ) : (
         <View style={styles.actionButtonContainer}>
           <Button title="Save Entry" onPress={uploadMedia} />
-          <Button 
+          <Button
             title="Start Over"
             onPress={() => {
               setMediaUri(null);
@@ -88,39 +125,39 @@ const {
 };
 
 const styles = StyleSheet.create({
-    previewContainer: {
-      flex: 1,
-      position: 'relative',
-    },
-    preview: {
-      flex: 1,
-      borderRadius: 10,
-      resizeMode: 'cover',
-    },
-    videoIndicator: {  // Included though not currently used, might be useful
-      position: 'absolute',
-      top: 10,
-      right: 10,
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-      color: 'white',
-      padding: 5,
-      paddingHorizontal: 10,
-      borderRadius: 15,
-      overflow: 'hidden',
-    },
-    input: {
-      backgroundColor: '#222',
-      color: '#fff',
-      borderColor: '#555',
-      borderWidth: 1,
-      borderRadius: 6,
-      padding: 10,
-      marginVertical: 10,
-    },
-    actionButtonContainer: {
-      marginTop: 10,
-      marginBottom: 20,
-    }
-  });
-  
-  export default CaptureView;
+  previewContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  preview: {
+    flex: 1,
+    borderRadius: 10,
+    resizeMode: 'cover',
+  },
+  videoIndicator: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    color: 'white',
+    padding: 5,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  input: {
+    backgroundColor: '#222',
+    color: '#fff',
+    borderColor: '#555',
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 10,
+    marginVertical: 10,
+  },
+  actionButtonContainer: {
+    marginTop: 10,
+    marginBottom: 20,
+  },
+});
+
+export default CaptureView;

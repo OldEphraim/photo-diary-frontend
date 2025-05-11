@@ -15,8 +15,10 @@ export default ({ config }) => ({
     backgroundColor: "#ffffff",
   },
   ios: {
+    bundleIdentifier: "com.oldephraim.photodiary",
     supportsTablet: true,
     infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
       NSAppTransportSecurity: {
         NSAllowsArbitraryLoads: true,
         NSExceptionDomains: {
@@ -43,5 +45,10 @@ export default ({ config }) => ({
   plugins: ["expo-router"],
   experiments: {
     typedRoutes: true,
+  },
+  extra: {
+    eas: {
+      projectId: "4acd3dab-573b-4190-9562-502fac5ba039",
+    },
   },
 })

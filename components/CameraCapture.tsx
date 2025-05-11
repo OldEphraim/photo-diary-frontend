@@ -72,11 +72,18 @@ export default function CameraCapture() {
       console.log("Got token:", token?.slice(0, 20) + "...");
 
       const formData = new FormData();
-      formData.append('file', {
-        uri: mediaUri,
-        name: isVideo ? 'upload.mp4' : 'upload.jpg',
-        type: isVideo ? 'video/mp4' : 'image/jpeg',
-      } as any);
+      if (Platform.OS === 'web') {
+        const blob = await (await fetch(mediaUri)).blob();
+        formData.append('file', new File([blob], isVideo ? 'upload.mp4' : 'upload.jpg', {
+          type: isVideo ? 'video/mp4' : 'image/jpeg'
+        }));
+      } else {
+        formData.append('file', {
+          uri: mediaUri,
+          name: isVideo ? 'upload.mp4' : 'upload.jpg',
+          type: isVideo ? 'video/mp4' : 'image/jpeg',
+        } as any);
+      }      
 
       if (!isVideo && audioUri) {
         formData.append('audio', {
@@ -145,6 +152,7 @@ export default function CameraCapture() {
           isUploading={isUploading}
           uploadMedia={uploadMedia}
           setMediaUri={setMediaUri}
+          setIsVideo={setIsVideo}
         />
       ) : (
         <ReviewView

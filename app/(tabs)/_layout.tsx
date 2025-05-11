@@ -12,6 +12,7 @@ function TabBarIcon(props: { name: React.ComponentProps<typeof FontAwesome>['nam
 export default function TabLayout() {
   const { isSignedIn, isLoaded } = useAuth()
   const colorScheme = useColorScheme()
+  const headerShown = useClientOnlyValue(false, true)
 
   if (!isLoaded) return null
   if (!isSignedIn) return <Redirect href="../sign-in" />
@@ -20,7 +21,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: useClientOnlyValue(false, true),
+        headerShown,
       }}
     >
       <Tabs.Screen
