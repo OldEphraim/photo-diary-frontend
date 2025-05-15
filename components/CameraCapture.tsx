@@ -10,6 +10,7 @@ import { useCameraPermissions, useMicrophonePermissions } from 'expo-camera'
 import { Audio } from 'expo-av'
 import { useAuth } from '@clerk/clerk-expo'
 import { useRouter } from 'expo-router'
+import * as FileSystem from 'expo-file-system'
 import CaptureView from './CaptureView'
 import ReviewView from './ReviewView'
 import useAudioRecording from '@/hooks/useAudioRecording'
@@ -61,6 +62,17 @@ export default function CameraCapture() {
     })();
   }, [requestCameraPermission, requestMicrophonePermission]);
 
+  // Helper function to check if URI is a media package directory
+  const isMediaPackage = (uri: string): boolean => {
+    return (
+      uri.startsWith(FileSystem.cacheDirectory || '') && 
+      !uri.endsWith('.mp4') && 
+      !uri.endsWith('.mov') && 
+      !uri.endsWith('.jpg') && 
+      !uri.endsWith('.jpeg')
+    );
+  };
+
   const uploadMedia = async () => {
     if (!mediaUri) return;
 
@@ -72,25 +84,80 @@ export default function CameraCapture() {
       console.log("Got token:", token?.slice(0, 20) + "...");
 
       const formData = new FormData();
-      if (Platform.OS === 'web') {
-        const blob = await (await fetch(mediaUri)).blob();
-        formData.append('file', new File([blob], isVideo ? 'upload.mp4' : 'upload.jpg', {
-          type: isVideo ? 'video/mp4' : 'image/jpeg'
-        }));
+      
+      // Check if this is our custom media package (image + audio)
+      if (isVideo && isMediaPackage(mediaUri)) {
+        console.log("Handling media package upload");
+        
+        // Read the metadata
+        const metadataPath = `${mediaUri}metadata.json`;
+        const metadataExists = await FileSystem.getInfoAsync(metadataPath);
+        
+        if (metadataExists.exists) {
+          const metadataString = await FileSystem.readAsStringAsync(metadataPath);
+          const metadata = JSON.parse(metadataString);
+          
+          console.log("Found metadata:", JSON.stringify(metadata, null, 2));
+          
+          // Add image to form data
+          if (Platform.OS === 'web') {
+            const imageBlob = await (await fetch(metadata.image)).blob();
+            formData.append('file', new File([imageBlob], 'image.jpg', {
+              type: 'image/jpeg'
+            }));
+            
+            const audioBlob = await (await fetch(metadata.audio)).blob();
+            formData.append('audio', new File([audioBlob], 'audio.m4a', {
+              type: 'audio/x-m4a'
+            }));
+          } else {
+            // Add image to form data
+            formData.append('file', {
+              uri: metadata.image,
+              name: 'image.jpg',
+              type: 'image/jpeg',
+            } as any);
+            
+            // Add audio to form data
+            formData.append('audio', {
+              uri: metadata.audio,
+              name: 'audio.m4a',
+              type: 'audio/x-m4a',
+            } as any);
+          }
+          
+          // Flag this as a package that needs server-side stitching
+          formData.append('requiresStitching', 'true');
+          formData.append('audioDuration', String(metadata.duration));
+        } else {
+          console.error("Metadata file not found");
+          Alert.alert('Error', 'Media package metadata not found.');
+          setIsUploading(false);
+          return;
+        }
       } else {
-        formData.append('file', {
-          uri: mediaUri,
-          name: isVideo ? 'upload.mp4' : 'upload.jpg',
-          type: isVideo ? 'video/mp4' : 'image/jpeg',
-        } as any);
-      }      
+        // Regular file upload (existing code)
+        if (Platform.OS === 'web') {
+          const blob = await (await fetch(mediaUri)).blob();
+          formData.append('file', new File([blob], isVideo ? 'upload.mp4' : 'upload.jpg', {
+            type: isVideo ? 'video/mp4' : 'image/jpeg'
+          }));
+        } else {
+          formData.append('file', {
+            uri: mediaUri,
+            name: isVideo ? 'upload.mp4' : 'upload.jpg',
+            type: isVideo ? 'video/mp4' : 'image/jpeg',
+          } as any);
+        }      
 
-      if (!isVideo && audioUri) {
-        formData.append('audio', {
-          uri: audioUri,
-          name: 'audio.m4a',
-          type: 'audio/x-m4a',
-        } as any);
+        // Regular audio handling (for non-video image uploads)
+        if (!isVideo && audioUri) {
+          formData.append('audio', {
+            uri: audioUri,
+            name: 'audio.m4a',
+            type: 'audio/x-m4a',
+          } as any);
+        }
       }
 
       formData.append('caption', caption);

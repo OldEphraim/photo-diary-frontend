@@ -43,7 +43,7 @@ export default ({ config }) => ({
     output: "static",
     favicon: "./assets/images/favicon.png",
   },
-  plugins: ["expo-router"],
+  plugins: ["expo-router", "expo-asset"],
   experiments: {
     typedRoutes: true,
   },

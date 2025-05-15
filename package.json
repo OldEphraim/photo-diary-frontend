@@ -41,7 +41,9 @@
     "react-native-screens": "~4.10.0",
     "react-native-video-processing": "^1.7.2",
     "react-native-web": "~0.20.0",
-    "expo-crypto": "~14.1.4"
+    "expo-crypto": "~14.1.4",
+    "expo-image-manipulator": "~13.1.7",
+    "expo-asset": "~11.1.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
