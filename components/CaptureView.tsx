@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Image, Text, TextInput, Button, ActivityIndicator, StyleSheet } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { FFmpegKit } from 'ffmpeg-kit-react-native';
+import { VideoManager } from 'react-native-video-processing';
 import formatDuration from '@/utils/formatDuration';
 import useAudioRecording from '@/hooks/useAudioRecording';
 
@@ -47,14 +47,21 @@ const CaptureView: React.FC<CaptureViewProps> = ({
       setIsStitching(true);
       try {
         const outputPath = FileSystem.cacheDirectory + `stitched_${Date.now()}.mp4`;
-        const ffmpegCommand = `-loop 1 -i "${mediaUri}" -i "${audioUri}" -c:v libx264 -tune stillimage -c:a aac -b:a 192k -shortest -pix_fmt yuv420p "${outputPath}"`;
-        console.log("🎬 Running FFmpeg:", ffmpegCommand);
-        await FFmpegKit.execute(ffmpegCommand);
+        console.log("🎬 Creating video from image and audio");
+        
+        // Use VideoManager instead of FFmpegKit
+        await VideoManager.createVideoFromImageAndAudio({
+          imagePath: mediaUri,
+          audioPath: audioUri,
+          outputPath: outputPath,
+          duration: recordingDuration / 1000, // Convert ms to seconds
+        });
+        
         setMediaUri(outputPath);
         console.log("Stitched output saved to:", outputPath);
         setIsVideo(true);
       } catch (e) {
-        console.error("❌ FFmpeg stitching failed:", e);
+        console.error("❌ Video stitching failed:", e);
       } finally {
         setIsStitching(false);
       }
