@@ -36,6 +36,7 @@ export default ({ config }) => ({
       backgroundColor: "#ffffff",
     },
     edgeToEdgeEnabled: true,
+    package: "com.oldephraim.photodiary",
   },
   web: {
     bundler: "metro",
