@@ -1,4 +1,6 @@
 // app.config.js
+const env = require('./env');
+
 export default ({ config }) => ({
   ...config,
   name: "photo-diary",
@@ -22,7 +24,7 @@ export default ({ config }) => ({
       NSAppTransportSecurity: {
         NSAllowsArbitraryLoads: true,
         NSExceptionDomains: {
-          [process.env.EXPO_PUBLIC_API_IP]: {
+          [env.API_URL || process.env.EXPO_PUBLIC_API_IP]: {
             NSExceptionAllowsInsecureHTTPLoads: true,
             NSIncludesSubdomains: true,
           },
@@ -50,10 +52,8 @@ export default ({ config }) => ({
   extra: {
     eas: {
       projectId: "4acd3dab-573b-4190-9562-502fac5ba039",
-    ,
-    // Added by prebuild.js
-    clerkPublishableKey: "pk_test_cmVuZXdlZC1icmVhbS05NS5jbGVyay5hY2NvdW50cy5kZXYk",
-    apiUrl: "192.168.1.46",
-  },
+    },
+    clerkPublishableKey: env.CLERK_KEY || process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    apiUrl: env.API_URL || process.env.EXPO_PUBLIC_API_IP,
   },
 })
