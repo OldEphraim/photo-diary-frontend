@@ -7,6 +7,7 @@ import { Stack, Redirect, usePathname } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
 import { useColorScheme } from '@/components/useColorScheme'
+import Constants from 'expo-constants'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -26,6 +27,7 @@ export default function RootLayout() {
     ...FontAwesome.font,
   })
 
+  const clerkKey = Constants.expoConfig?.extra?.clerkPublishableKey;
   const colorScheme = useColorScheme()
   const pathname = usePathname()
 
@@ -43,7 +45,7 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider
-      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      publishableKey={clerkKey}
       tokenCache={tokenCache}
     >
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

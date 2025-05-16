@@ -43,7 +43,8 @@
     "react-native-web": "~0.20.0",
     "expo-crypto": "~14.1.4",
     "expo-image-manipulator": "~13.1.7",
-    "expo-asset": "~11.1.5"
+    "expo-asset": "~11.1.5",
+    "@react-native-community/netinfo": "11.4.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
