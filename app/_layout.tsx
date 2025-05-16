@@ -22,6 +22,26 @@ const tokenCache = {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    console.log('========================');
+    console.log('🚀 ROOT LAYOUT MOUNTED');
+    console.log('========================');
+    
+    // Log all environment variables
+    console.log('Constants:', Constants.expoConfig?.extra);
+    console.log('Clerk Key:', Constants.expoConfig?.extra?.clerkPublishableKey ? 
+      `${Constants.expoConfig?.extra?.clerkPublishableKey.substring(0, 5)}...` : 'NOT FOUND');
+    console.log('API URL:', Constants.expoConfig?.extra?.apiUrl || 'NOT FOUND');
+    
+    // Check important dependencies
+    try {
+      const clerk = require('@clerk/clerk-expo');
+      console.log('Clerk version loaded:', clerk.version || 'unknown');
+    } catch (e) {
+      console.error('Failed to load Clerk:', e);
+    }
+  })
+
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
